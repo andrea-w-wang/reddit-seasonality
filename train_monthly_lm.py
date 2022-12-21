@@ -19,6 +19,7 @@ class SubredditMonthModel:
     def __init__(self, subreddit, month, model_name):
         self.subreddit = subreddit
         self.month = month
+        self.model_name = model_name
         self.model = AutoModelForCausalLM.from_pretrained(model_name).to(device_name)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.tokenizer.pad_token = self.tokenizer.eos_token
