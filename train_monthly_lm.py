@@ -18,19 +18,23 @@ from datasets import load_dataset, Dataset
 class SubredditMonthModel:
     def __init__(self, subreddit, month, model_name):
         self.subreddit = subreddit
-        self.month = month
         self.model_name = model_name
-        self.model = AutoModelForCausalLM.from_pretrained(model_name).to(device_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.tokenizer.pad_token = self.tokenizer.eos_token
+        self.month = month
         self.model_output_path = f"models/{self.model_name}_{self.subreddit}_{self.month}"
         self.lm_dataset = None
 
+        self.model = None
+        self.tokenizer = None
+
     def pipeline(self):
-        print(f"Starting {self.model_output_path}...")
+        print(f"Start: {self.model_output_path}...")
+        print("- Load tokenizer")
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         print("- Processing data...")
         self.lm_dataset = self._prep_data_for_finetuning()
         print("- Finetuning...")
+        self.model = AutoModelForCausalLM.from_pretrained(model_name).to(device_name)
         self.train()
         print("- Saving Model...")
         self.save_model()
@@ -39,7 +43,7 @@ class SubredditMonthModel:
         usecols = ['year-month', 'timestamp', 'text', 'speaker']
         comments_df = pk.load(open(data_dir + f"{self.subreddit}-comments.pk", "rb"))
         comments_df = comments_df[usecols]
-        monthly_comments_df = comments_df[comments_df['year-month'] == month]
+        monthly_comments_df = comments_df[comments_df['year-month'] == self.month]
         monthly_comments = Dataset.from_pandas(monthly_comments_df)
 
         monthly_comments = monthly_comments.train_test_split(test_size=0.2)
