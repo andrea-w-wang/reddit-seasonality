@@ -29,12 +29,12 @@ class SubredditMonthModel:
     def pipeline(self):
         print(f"Start: {self.model_output_path}...")
         print("- Load tokenizer")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.tokenizer.pad_token = self.tokenizer.eos_token
         print("- Processing data...")
         self.lm_dataset = self._prep_data_for_finetuning()
         print("- Finetuning...")
-        self.model = AutoModelForCausalLM.from_pretrained(model_name).to(device_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name).to(device_name)
         self.train()
         print("- Saving Model...")
         self.save_model()
