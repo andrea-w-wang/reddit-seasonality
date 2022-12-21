@@ -21,7 +21,7 @@ class SubredditMonthModel:
         self.month = month
         self.model = AutoModelForCausalLM.from_pretrained(model_name).to(device_name)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.tokenizer.pad_token = tokenizer.eos_token
+        self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model_output_path = f"models/{self.model_name}_{self.subreddit}_{self.month}"
         self.lm_dataset = None
 
