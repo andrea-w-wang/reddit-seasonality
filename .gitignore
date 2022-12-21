@@ -1,6 +1,9 @@
 # project specific files
 data/
 models/
+*.jpg
+*.txt
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
