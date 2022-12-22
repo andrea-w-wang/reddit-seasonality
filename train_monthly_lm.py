@@ -6,8 +6,8 @@ import torch
 from sklearn.metrics import accuracy_score
 # Transformer library
 from transformers import AutoTokenizer, AutoModelForCausalLM
-from transformers import Trainer, TrainingArguments
 from transformers import DataCollatorForLanguageModeling
+from transformers import Trainer, TrainingArguments
 
 data_dir = "./data/"
 device_name = "cuda" if torch.cuda.is_available() else "cpu"
@@ -36,8 +36,6 @@ class SubredditMonthModel:
         print("- Finetuning...")
         self.model = AutoModelForCausalLM.from_pretrained(self.model_name).to(device_name)
         self.train()
-        print("- Saving Model...")
-        self.save_model()
 
     def _prep_data_for_finetuning(self):
         usecols = ['year-month', 'timestamp', 'text', 'speaker']
@@ -75,11 +73,10 @@ class SubredditMonthModel:
         return lm_dataset
 
     def train(self):
-
         data_collator = DataCollatorForLanguageModeling(tokenizer=self.tokenizer, mlm=False)
 
         training_args = TrainingArguments(
-            output_dir=f"./results",
+            output_dir=self.model_output_path,
             num_train_epochs=10,
             evaluation_strategy="epoch",
             learning_rate=2e-5,
@@ -96,16 +93,13 @@ class SubredditMonthModel:
             data_collator=data_collator,
         )
         trainer.train()
-
-    def save_model(self):
-        # save model
-        self.model.save_pretrained(self.model_output_path)
         self.tokenizer.save_pretrained(self.model_output_path)
 
 
 if __name__ == '__main__':
     from dateutil.parser import parse
     from dateutil.relativedelta import relativedelta
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-sr", "--subreddit", required=True, type=str)
     parser.add_argument("-start", "--start-month", default='2016-01', type=str)
@@ -115,9 +109,7 @@ if __name__ == '__main__':
 
     this_month = args.start_month
     while parse(this_month) <= parse(args.end_month):
-        m = SubredditMonthModel(args.subreddit, this_month, args.model)
-        m.pipeline()
-
-        this_month = (parse(args.start_month) + relativedelta(months=1)).strftime("%Y-%m")
-
-
+        # m = SubredditMonthModel(args.subreddit, this_month, args.model)
+        # m.pipeline()
+        print(this_month)
+        this_month = (parse(this_month) + relativedelta(months=1)).strftime("%Y-%m")
