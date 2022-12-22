@@ -78,11 +78,14 @@ class SubredditMonthModel:
         training_args = TrainingArguments(
             output_dir=self.model_output_path,
             num_train_epochs=10,
-            evaluation_strategy="epoch",
+            evaluation_strategy="steps",
             learning_rate=2e-5,
             weight_decay=0.01,
             logging_dir='./logs',  # directory for storing logs
-            logging_steps=10,
+            logging_steps=50,
+            eval_steps=50,
+            load_best_model_at_end=True,
+            save_steps=100
         )
 
         trainer = Trainer(
@@ -93,7 +96,8 @@ class SubredditMonthModel:
             data_collator=data_collator,
         )
         trainer.train()
-        self.tokenizer.save_pretrained(self.model_output_path)
+        self.model.save_pretrained(self.model_output_path + "./best")
+        self.tokenizer.save_pretrained(self.model_output_path + "./best")
 
 
 if __name__ == '__main__':
