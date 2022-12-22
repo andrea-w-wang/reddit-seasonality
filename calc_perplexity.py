@@ -22,8 +22,9 @@ def run(subreddit, model_month, model_name="distilgpt2"):
     comments_df = comments_df[usecols]
 
     perplexity = evaluate.load("perplexity", module_type="metric")
-    checkpoint = f"./models/{model_name}_{subreddit}_{model_month}/best"
-    print(checkpoint)
+    checkpoint_name = f"{model_name}_{subreddit}_{model_month}"
+    checkpoint = f"./models/{checkpoint_name}/best"
+    print(checkpoint_name)
     max_length = 512
 
     ppl_results = dict()
@@ -43,13 +44,14 @@ def run(subreddit, model_month, model_name="distilgpt2"):
             add_start_token=True,  # default
             predictions=input_texts
         )
+    pk.dump(ppl_results,
+            open(data_dir + f"output/{checkpoint_name}_scores.pk", "wb"))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-sr", "--subreddit", required=True, type=str)
     parser.add_argument("-month", "--model-month", required=True, type=str)
-    parser.add_argument("-end", "--end-month", default='2018-01', type=str)
     parser.add_argument("-m", "--model-name", default='distilgpt2', type=str)
     args = parser.parse_args()
 
