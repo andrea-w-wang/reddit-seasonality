@@ -29,7 +29,7 @@ def run(subreddit, model_month, model_name="distilgpt2"):
     ppl_results = dict()
 
     predict_month = model_month
-    for i in range(1, 24):
+    for i in range(1, 25):
         predict_month = (parse(predict_month) + relativedelta(months=1)).strftime("%Y-%m")
         print(f"***Predict {predict_month}***")
         input_texts = [t[:max_length] for t in
