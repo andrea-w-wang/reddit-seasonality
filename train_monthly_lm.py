@@ -96,8 +96,7 @@ class SubredditMonthModel:
             data_collator=data_collator,
         )
         trainer.train()
-        self.model.save_pretrained(self.model_output_path + "/best")
-        self.tokenizer.save_pretrained(self.model_output_path + "/best")
+        trainer.save_model(self.model_output_path + "/best")
 
 
 if __name__ == '__main__':
