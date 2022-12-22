@@ -113,7 +113,6 @@ if __name__ == '__main__':
 
     this_month = args.start_month
     while parse(this_month) <= parse(args.end_month):
-        # m = SubredditMonthModel(args.subreddit, this_month, args.model)
-        # m.pipeline()
-        print(this_month)
+        m = SubredditMonthModel(args.subreddit, this_month, args.model)
+        m.pipeline()
         this_month = (parse(this_month) + relativedelta(months=1)).strftime("%Y-%m")
