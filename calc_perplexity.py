@@ -32,7 +32,8 @@ def run(subreddit, model_month, model_name="distilgpt2"):
     last_month = comments_df['year-month'].max()
     try:
         existing_ppl = pk.load(open(data_dir + f"output/{checkpoint_name}_scores.pk", "rb"))
-        predict_month = max(existing_ppl.keys())
+        existing_last_month = max(existing_ppl.keys())
+        predict_month = (parse(existing_last_month) + relativedelta(months=1)).strftime("%Y-%m")
     except ValueError:
         predict_month = model_month
 
