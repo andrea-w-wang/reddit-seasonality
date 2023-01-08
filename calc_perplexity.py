@@ -29,9 +29,16 @@ def run(subreddit, model_month, model_name="distilgpt2"):
 
     ppl_results = dict()
 
-    for m in range(0, 25):
-        predict_month = (parse(model_month) + relativedelta(months=m)).strftime("%Y-%m")
+    last_month = comments_df['year-month'].max()
+    try:
+        existing_ppl = pk.load(open(data_dir + f"output/{checkpoint_name}_scores.pk", "rb"))
+        predict_month = max(existing_ppl.keys())
+    except ValueError:
+        predict_month = model_month
+
+    while predict_month <= last_month:
         print(f"***Predict {predict_month}***")
+
         input_texts = [t[:max_length] for t in
                        comments_df[comments_df['year-month'] == predict_month]['text']
                        if t != ""]
@@ -43,6 +50,8 @@ def run(subreddit, model_month, model_name="distilgpt2"):
             add_start_token=True,  # default
             predictions=input_texts
         )
+        predict_month = (parse(predict_month) + relativedelta(months=1)).strftime("%Y-%m")
+
     pk.dump(ppl_results,
             open(data_dir + f"output/{checkpoint_name}_scores.pk", "wb"))
 
