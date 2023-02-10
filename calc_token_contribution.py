@@ -11,6 +11,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import Trainer, TrainingArguments
 
 data_dir = "./data/"
+output_dir = "./data/output/"
 device_name = "cuda" if torch.cuda.is_available() else "cpu"
 
 
@@ -66,7 +67,7 @@ def run(subreddit, model_month, predict_month):
 
     tc = TokenContribution(model, tokenizer)
     nlls = tc.calc_token_nlls(input_texts)
-    pk.dump(nlls, open(f"data/output/{subreddit}_nll_model={model_month}_predict={predict_month}.pk", "wb"))
+    pk.dump(nlls, open(output_dir + f"{subreddit}_nll_model={model_month}_predict={predict_month}.pk", "wb"))
     return nlls
 
 
