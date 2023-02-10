@@ -33,9 +33,7 @@ def calc_token_nlls(model, encodings, max_length=512):
         with torch.no_grad():
             outputs = model(input_ids, labels=target_ids)
             token_nll = outputs.loss * trg_len
-
-            target_word = tokenizer.decode(target_token)
-            nlls[target_word].append(token_nll.cpu().item())
+            nlls[target_token].append(token_nll.cpu().item())
 
         prev_end_loc = end_loc
         if end_loc == seq_len:
@@ -55,6 +53,9 @@ def run(subreddit, model_month, predict_month):
     input_texts = [t for t in comments_df[comments_df['year-month'] == predict_month]['text'] if t]
     encodings = tokenizer.encode("\n\n".join(input_texts), return_tensors="pt")
     nlls = calc_token_nlls(model, encodings)
+    for key, value in nlls.items():
+        target_word = tokenizer.decode(key)
+        nlls[target_word] = nlls.pop(key)
     pk.dump(nlls, open(f"data/output/{subreddit}-nll-model={model_month}-predict={predict_month}.pk", "wb"))
 
 
