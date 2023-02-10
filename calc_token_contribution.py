@@ -52,12 +52,14 @@ def run(subreddit, model_month, predict_month):
 
     input_texts = [t for t in comments_df[comments_df['year-month'] == predict_month]['text'] if t]
     encodings = tokenizer.encode("\n\n".join(input_texts), return_tensors="pt")
+
     nlls = calc_token_nlls(model, encodings)
-    for key, value in nlls.items():
+    nlls_keys = list(nlls.keys())
+    for key in nlls_keys:
         target_word = tokenizer.decode(key)
         nlls[target_word] = nlls.pop(key)
-    pk.dump(nlls, open(f"data/output/{subreddit}-nll-model={model_month}-predict={predict_month}.pk", "wb"))
-
+    pk.dump(nlls, open(f"data/output/{subreddit}_nll_model={model_month}_predict={predict_month}.pk", "wb"))
+    return nlls
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
