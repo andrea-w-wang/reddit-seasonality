@@ -67,7 +67,7 @@ def run(subreddit, model_month, predict_month):
 
     tc = TokenContribution(model, tokenizer)
     nlls = tc.calc_token_nlls(input_texts)
-    pk.dump(nlls, open(output_dir + f"{subreddit}_nll_model={model_month}_predict={predict_month}.pk", "wb"))
+    pk.dump(nlls, open(output_dir + f"{subreddit}_nll_model{model_month}_predict{predict_month}.pk", "wb"))
     return nlls
 
 
