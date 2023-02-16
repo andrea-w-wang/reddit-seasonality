@@ -3,6 +3,7 @@ import pickle as pk
 data_dir = "./data/"
 output_dir = "./data/samples/"
 
+
 def run(subreddit, nsamples):
     usecols = ['year-month', 'text']
     comments_df = pk.load(open(data_dir + f"{subreddit}-comments.pk", "rb"))
@@ -20,8 +21,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-sr", "--subreddit", required=True, type=str)
     parser.add_argument("-n", "--nsamples", default=300, type=int)
-    parser.add_argument("-o", "--output", required=True, type=str)
     args = parser.parse_args()
 
-    random_samples = run(args.subreddit, args.nsamples)
-    pk.dump(random_samples, open(f"{output_dir}{args.subreddit}/{args.output}.pk", "wb"))
+    for it in range(5):
+        random_samples = run(args.subreddit, 300)
+        pk.dump(random_samples, open(f"./data/samples/{args.subreddit}-sample{it}.pk", "wb"))
