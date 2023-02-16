@@ -25,4 +25,4 @@ if __name__ == '__main__':
 
     for it in range(5):
         random_samples = run(args.subreddit, 300)
-        pk.dump(random_samples, open(f"./data/samples/{args.subreddit}-sample{it}.pk", "wb"))
+        pk.dump(random_samples, open(f"./data/samples/{args.subreddit}-sample{int(time.time())}.pk", "wb"))
