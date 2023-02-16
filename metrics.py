@@ -63,6 +63,14 @@ class JSD:
         return stash
 
 
+import datasets
+import numpy as np
+import torch
+from torch.nn import CrossEntropyLoss
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+import evaluate
+
 _DESCRIPTION = "This is a modified version of huggingface perplexity that outputs loss at each token."
 _CITATION = ""
 _KWARGS_DESCRIPTION = ""
