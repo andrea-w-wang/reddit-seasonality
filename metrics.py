@@ -70,12 +70,13 @@ from torch.nn import CrossEntropyLoss
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 import evaluate
+from evaluate import logging
 
 _DESCRIPTION = "This is a modified version of huggingface perplexity that outputs loss at each token."
 _CITATION = ""
 _KWARGS_DESCRIPTION = ""
 
-
+# https://github.com/huggingface/evaluate/blob/main/measurements/perplexity/perplexity.py
 class myPerplexity(evaluate.Measurement):
     def _info(self):
         return evaluate.MeasurementInfo(
