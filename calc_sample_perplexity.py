@@ -1,4 +1,4 @@
-import argparse
+import os
 import evaluate
 import numpy as np
 import pickle as pk
@@ -14,45 +14,36 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 np.random.seed(0)
 
 
-def calculate_my_ppl(checkpoint_path, sentences):
-
-    return perplexity.compute(
+def calculate_my_ppl(checkpoint_path, utterances):
+    perplexity = metrics.myPerplexity()
+    ppl = perplexity._compute(
         model_id=checkpoint_path,
-        add_start_token=False,  # default
-        data=sentences,
+        add_start_token=False,
+        data=utterances,
         max_length=1024
     )
+    return ppl
 
 
-def run(subreddit, utterance_file, model_month, model_name="distilgpt2"):
-    comments_df = pk.load(open(utterance_file, 'rb'))
-    perplexity = metrics.myPerplexity()
-    checkpoint_name = f"{model_name}_{subreddit}_{model_month}"
-    checkpoint = f"./models/{checkpoint_name}/best"
-    print(checkpoint_name)
+def run(subreddit, utterance_filepath, model_month, model_name="distilgpt2"):
+    utts = pk.load(open(utterance_filepath, 'rb'))
+    utts = list(utts['text'].values)
+    print(len(utts))
+    checkpoint_path = f"./models/{model_name}_{subreddit}_{model_month}/best"
+    print(checkpoint_path)
+    output = calculate_my_ppl(checkpoint_path, utts)
 
-
-        print(f"***Predict {predict_month}***")
-        input_texts = [t for t in comments_df[comments_df['year-month'] == predict_month]['text'] if t]
-        selected_random_utts = list(np.random.choice(input_texts, size=300, replace=False))
-        del input_texts
-        ppl_month = perplexity._compute(
-            model_id=checkpoint,
-            add_start_token=False,
-            data=selected_random_utts,
-            max_length=1024
-        )
-        ppl_month['utterances'] = selected_random_utts
-        pk.dump(ppl_month,
-                open(data_dir + f"output/{checkpoint_name}_predict{predict_month}_scores.pk", "wb"))
-
-        predict_month = (parse(predict_month) + relativedelta(months=1)).strftime("%Y-%m")
+    utterance_filename = os.path.basename(utterance_filepath).split(".")[0]
+    pk.dump(output,
+            open(data_dir + f"output/{model_name}_{subreddit}_{model_month}-{utterance_filename}-scores.pk", "wb"))
 
 
 if __name__ == '__main__':
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--subreddit", required=True, type=str)
+    parser.add_argument("-fp", "--utterance-filepath", required=True, type=str)
     parser.add_argument("-month", "--model-month", required=True, type=str)
     parser.add_argument("-model", "--model-name", default='distilgpt2', type=str)
     args = parser.parse_args()
-    run(args.subreddit, args.model_month, args.model_name)
+    run(args.subreddit, args.utterance_filepath, args.model_month, args.model_name)
