@@ -10,8 +10,11 @@ def run(subreddit, nsamples):
     comments_df = comments_df[usecols]
     comments_df['year'] = comments_df['year-month'].apply(lambda ym: int(ym.split('-')[0]))
     comments_df = comments_df[comments_df['year'] >= 2014]
+    comments_df['text'] = comments_df['text'].apply(lambda t: ' '.join(list(filter(bool, t.split()))))
+    comments_df['text_len'] = comments_df['text'].apply(lambda t: len(t.split()))
+    comments_df = comments_df[comments_df['text_len'] >= 5]
     random_samples = comments_df.groupby("year-month").sample(n=nsamples, replace=False)[
-        ['year-month', 'text']].reset_index()
+        ['year-month', 'text']]
     return random_samples
 
 
