@@ -69,7 +69,7 @@ class myPerplexity(evaluate.Measurement):
             reference_urls=["https://huggingface.co/docs/transformers/perplexity"],
         )
 
-    def compute(
+    def _compute(
             self, data, model_id, batch_size: int = 16, add_start_token: bool = False, device=None, max_length=None
     ):
 
