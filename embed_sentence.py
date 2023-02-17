@@ -22,7 +22,9 @@ if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("-sr", "--subreddit", required=True, type=str)
+    parser.add_argument("-sr", "--subreddit", required=True, type=str, nargs='+')
     args = parser.parse_args()
-    embeddings = run(args.subreddit)
-    pk.dump(random_samples, open(f"./data/{args.subreddit}-sentence-embeddings.pk", "wb"))
+
+    for subreddit in ars.subreddit:
+        embeddings = run(args.subreddit)
+        pk.dump(random_samples, open(f"./data/{args.subreddit}-sentence-embeddings.pk", "wb"))
