@@ -15,7 +15,7 @@ np.random.seed(0)
 
 
 def calculate_my_ppl(checkpoint_path, sentences):
-    perplexity = metrics.myPerplexity()
+
     return perplexity.compute(
         model_id=checkpoint_path,
         add_start_token=False,  # default
@@ -24,42 +24,41 @@ def calculate_my_ppl(checkpoint_path, sentences):
     )
 
 
-def run(subreddit, predict_month, model_month, model_name="distilgpt2"):
+def run(subreddit, model_month, model_name="distilgpt2"):
     usecols = ['year-month', 'text']
     comments_df = pk.load(open(data_dir + f"{subreddit}-comments.pk", "rb"))
     comments_df = comments_df[usecols]
 
-    input_texts = [t for t in comments_df[comments_df['year-month'] == predict_month]['text'] if t]
-    selected_random_utts = list(np.random.choice(input_texts, size=300, replace=False))
+    perplexity = metrics.myPerplexity()
+    checkpoint_name = f"{model_name}_{subreddit}_{model_month}"
+    checkpoint = f"./models/{checkpoint_name}/best"
+    print(checkpoint_name)
 
-    ppl_results = {"predict_month": predict_month,
-                   "utterances": selected_random_utts,
-                   "model_month": model_month
-                   }
+    last_month = "2018-10"
+    predict_month = "2014-01"
+    while predict_month <= last_month:
 
-    checkpoint_path = f"./models/{model_name}_{subreddit}_{model_month}/best"
-    my_ppl = calculate_my_ppl(checkpoint_path, selected_random_utts)
-    ppl_results.update(my_ppl)
+        print(f"***Predict {predict_month}***")
+        input_texts = [t for t in comments_df[comments_df['year-month'] == predict_month]['text'] if t]
+        selected_random_utts = list(np.random.choice(input_texts, size=300, replace=False))
+        del input_texts
+        ppl_month = perplexity._compute(
+            model_id=checkpoint,
+            add_start_token=True,  # default
+            data=selected_random_utts,
+            max_length=1024
+        )
+        ppl_month['utterances'] = selected_random_utts
+        predict_month = (parse(predict_month) + relativedelta(months=1)).strftime("%Y-%m")
 
-    return ppl_results
+        pk.dump(ppl_month,
+                open(data_dir + f"output/{checkpoint_name}_predict{predict_month}_scores.pk", "wb"))
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--subreddit", required=True, type=str)
-    parser.add_argument("-pm", "--predict-month", required=True, type=str)
-    parser.add_argument("-smm", "--start-model-month", required=True, type=str)
-    parser.add_argument("-emm", "--end-model-month", required=True, type=str)
-    parser.add_argument("--model-name", default='distilgpt2', type=str)
+    parser.add_argument("-month", "--model-month", required=True, type=str)
+    parser.add_argument("-model", "--model-name", default='distilgpt2', type=str)
     args = parser.parse_args()
-
-    model_month = args.start_model_month
-
-    while parse(model_month) <= parse(args.end_model_month):
-        print(model_month)
-        output = run(args.subreddit, args.predict_month, model_month)
-        pk.dump(output, open(
-            f"./data/output/{args.subreddit}-model{model_month}-predict{args.predict_month}.pk", "wb"
-        ))
-
-        model_month = (parse(model_month) + relativedelta(months=1)).strftime("%Y-%m")
+    run(args.subreddit, args.model_month, args.model_name)
