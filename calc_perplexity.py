@@ -50,6 +50,7 @@ if __name__ == '__main__':
     parser.add_argument("-pm", "--predict-month", required=True, type=str)
     parser.add_argument("-smm", "--start-model-month", required=True, type=str)
     parser.add_argument("-emm", "--end-model-month", required=True, type=str)
+    parser.add_argument("--model-name", default='distilgpt2', type=str)
     args = parser.parse_args()
 
     model_month = args.start_model_month
