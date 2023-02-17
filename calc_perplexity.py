@@ -49,10 +49,10 @@ def run(subreddit, model_month, model_name="distilgpt2"):
             max_length=1024
         )
         ppl_month['utterances'] = selected_random_utts
-        predict_month = (parse(predict_month) + relativedelta(months=1)).strftime("%Y-%m")
-
         pk.dump(ppl_month,
                 open(data_dir + f"output/{checkpoint_name}_predict{predict_month}_scores.pk", "wb"))
+
+        predict_month = (parse(predict_month) + relativedelta(months=1)).strftime("%Y-%m")
 
 
 if __name__ == '__main__':
