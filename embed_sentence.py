@@ -27,5 +27,5 @@ if __name__ == '__main__':
 
     for subreddit in args.subreddit:
         print(subreddit)
-        embeddings = run(args.subreddit)
-        pk.dump(random_samples, open(f"./data/{args.subreddit}-sentence-embeddings.pk", "wb"))
+        embeddings = run(subreddit)
+        pk.dump(random_samples, open(f"./data/{subreddit}-sentence-embeddings.pk", "wb"))
