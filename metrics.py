@@ -72,6 +72,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import evaluate
 from evaluate import logging
 
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
 _DESCRIPTION = "This is a modified version of huggingface perplexity that outputs loss at each token."
 _CITATION = ""
 _KWARGS_DESCRIPTION = ""
