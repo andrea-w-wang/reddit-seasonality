@@ -44,7 +44,7 @@ def run(subreddit, model_month, model_name="distilgpt2"):
         del input_texts
         ppl_month = perplexity._compute(
             model_id=checkpoint,
-            add_start_token=True,  # default
+            add_start_token=False,
             data=selected_random_utts,
             max_length=1024
         )
