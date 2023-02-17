@@ -26,5 +26,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for subreddit in ars.subreddit:
+        print(subreddit)
         embeddings = run(args.subreddit)
         pk.dump(random_samples, open(f"./data/{args.subreddit}-sentence-embeddings.pk", "wb"))
