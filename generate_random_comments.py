@@ -1,5 +1,5 @@
 import pickle as pk
-
+import time
 data_dir = "./data/"
 output_dir = "./data/samples/"
 
