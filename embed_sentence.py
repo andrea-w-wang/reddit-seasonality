@@ -28,4 +28,4 @@ if __name__ == '__main__':
     for subreddit in args.subreddit:
         print(subreddit)
         embeddings = run(subreddit)
-        pk.dump(random_samples, open(f"./data/{subreddit}-sentence-embeddings.pk", "wb"))
+        pk.dump(embeddings, open(f"./data/{subreddit}-sentence-embeddings.pk", "wb"))
