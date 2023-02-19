@@ -1,6 +1,6 @@
-import os
 import evaluate
 import numpy as np
+import os
 import pickle as pk
 import torch
 from dateutil.parser import parse
@@ -12,6 +12,16 @@ data_dir = "./data/"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 np.random.seed(0)
+
+
+def calculate_huggingface_ppl(checkpoint_path, sentences):
+    perplexity = evaluate.load("perplexity", module_type="metric")
+    return perplexity.compute(
+        model_id=checkpoint_path,
+        add_start_token=False,  # default
+        predictions=sentences,
+        max_length=1024
+    )
 
 
 def calculate_my_ppl(checkpoint_path, utterances):
@@ -31,7 +41,7 @@ def run(subreddit, utterance_filepath, model_month, model_name="distilgpt2"):
     print(len(utts))
     checkpoint_path = f"./models/{model_name}_{subreddit}_{model_month}/best"
     print(checkpoint_path)
-    output = calculate_my_ppl(checkpoint_path, utts)
+    output = calculate_huggingface_ppl(checkpoint_path, utts)
 
     utterance_filename = os.path.basename(utterance_filepath).split(".")[0]
     pk.dump(output,
@@ -40,6 +50,7 @@ def run(subreddit, utterance_filepath, model_month, model_name="distilgpt2"):
 
 if __name__ == '__main__':
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-r", "--subreddit", required=True, type=str)
     parser.add_argument("-fp", "--utterance-filepath", required=True, type=str)
