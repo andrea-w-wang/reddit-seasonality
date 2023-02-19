@@ -11,8 +11,6 @@ import metrics
 data_dir = "./data/"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-np.random.seed(0)
-
 
 def calculate_huggingface_ppl(checkpoint_path, sentences):
     perplexity = evaluate.load("perplexity", module_type="metric")
@@ -38,7 +36,6 @@ def calculate_my_ppl(checkpoint_path, utterances):
 def run(subreddit, utterance_filepath, model_month, model_name="distilgpt2"):
     utts = pk.load(open(utterance_filepath, 'rb'))
     utts = list(utts['text'].values)
-    print(len(utts))
     checkpoint_path = f"./models/{model_name}_{subreddit}_{model_month}/best"
     print(checkpoint_path)
     output = calculate_huggingface_ppl(checkpoint_path, utts)
