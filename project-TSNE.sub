@@ -10,4 +10,4 @@
 #SBATCH --mem=20G                             # server memory requested (per node)
 #SBATCH -t 5:00:00                            # Time limit (hh:mm:ss)
 #SBATCH --partition=default_partition          # Request partition
-/share/gpu/andrea/religion-subreddits/project-TSNE.sh
+/share/luxlab/andrea/religion-subreddits/project-TSNE.sh
