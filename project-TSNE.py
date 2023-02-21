@@ -16,7 +16,7 @@ projection = method.fit_transform(embeddings)
 metadata = combined_emb_df[['id', 'year-month', 'file']].reset_index(drop=True)
 metadata['subreddit'] = metadata['file'].apply(lambda f: f.split("-")[0])
 xdf = pd.concat((pd.DataFrame(projection), metadata), axis=1)
-sns.scatterplot(data=xdf, x=0, y=1, hue='subreddit')
+sns.scatterplot(data=xdf, x=0, y=1, hue='subreddit', alpha=0.5)
 plt.title(f"TSNE-perplexity_{args.perplexity}")
 plt.savefig(f"./figures/TSNE-perplexity_{args.perplexity}.png")
 
