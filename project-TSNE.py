@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import pickle as pk
 import seaborn as sns
-
+import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-p", "--perplexity", required=True, type=float)
 args = parser.parse_args()
