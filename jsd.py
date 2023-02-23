@@ -45,3 +45,6 @@ if __name__ == '__main__':
     sample_df_folder = './data/samples/'
     utt_fp = f"{sample_df_folder}{args.subreddit}-comments.pk"
     stash = get_ngrams_counter(utt_fp)
+
+    pk.dump(stash, open(f"{args.subreddit}.pk", "wb"))
+
