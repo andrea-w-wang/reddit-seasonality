@@ -31,7 +31,7 @@ python3 {args.py_func} --subreddit {subreddit}
 #SBATCH -N 1                                   # Total number of nodes requested
 #SBATCH -n 8                                  # Total number of cores requested
 #SBATCH --get-user-env                         # retrieve the users login environment
-#SBATCH --mem=20G                             # server memory requested (per node)
+#SBATCH --mem=50G                             # server memory requested (per node)
 #SBATCH -t 5:00:00                            # Time limit (hh:mm:ss)
 #SBATCH --partition=default_partition          # Request partition
 /share/luxlab/andrea/religion-subreddits/{job_prefix}-{subreddit}.sh
