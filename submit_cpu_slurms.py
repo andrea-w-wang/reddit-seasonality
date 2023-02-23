@@ -37,5 +37,5 @@ python3 {args.py_func} --subreddit {subreddit}
 /share/luxlab/andrea/religion-subreddits/{job_prefix}-{subreddit}.sh
             """
         )
-
+    os.system(f"chmod 775 {job_prefix}-{subreddit}.sh")
     os.system(f"sbatch --requeue {job_prefix}-{subreddit}.sub")
