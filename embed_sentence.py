@@ -11,7 +11,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--subreddit", required=True, type=str)
 args = parser.parse_args()
-
+print(args.subreddit)
 sample_df_folder = './data/samples/'
 data = pk.load(open(f"{sample_df_folder}{args.subreddit}-comments.pk", "rb"))
 model = SentenceTransformer('sentence-transformers/sentence-t5-base', device=device)
