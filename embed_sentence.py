@@ -7,7 +7,7 @@ from sentence_transformers import SentenceTransformer
 import argparse
 import torch
 device = "cuda" if torch.cuda.is_available() else "cpu"
-
+print(device)
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--subreddit", required=True, type=str)
 args = parser.parse_args()
