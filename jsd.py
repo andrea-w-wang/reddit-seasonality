@@ -1,50 +1,26 @@
-import collections.abc
+import argparse
+from collections import defaultdict
+from itertools import combinations
 import pickle as pk
-from collections import Counter
+import metrics
 
-import pandas as pd
-from nltk.tokenize import word_tokenize
-from nltk.util import ngrams
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--subreddit", required=True, type=str)
+args = parser.parse_args()
 
-collections.Mapping = collections.abc.Mapping
+print(args.subreddit)
 
-data_dir = "./data/"
+ngrams_counter = pk.load(open(f"data/output/ngrams/{args.subreddit}.pk", "rb"))
+all_months = sorted(ngrams_counter.keys())
+month_pairs = list(combinations(all_months, r=2))
 
+jsd_diffs = defaultdict(dict)
+for month_1, month_2 in month_pairs:
+    print("\t", month_1, month_2)
 
-def count_ngrams(input_texts, n=1):
-    ngrams_counter = Counter()
-    for text in input_texts:
-        text_ngrams = ngrams(word_tokenize(text), n)
-        ngrams_counter.update(text_ngrams)
-    return ngrams_counter
+    my_jsd = metrics.JSD(ngrams_counter[month_1],
+                         ngrams_counter[month_2],
+                         weight_1=0.5, weight_2=0.5,
+                         base=2)
 
-
-def get_ngrams_counter(utt_fp):
-    ngrams_counter = dict()
-
-    data = pk.load(open(utt_fp, "rb"))
-    df = pd.DataFrame(list(data))
-    months = df['year-month'].unique()
-    for m in months:
-        print("\t", m)
-        monthly_comments = df[df['year-month'] == m]['text'].tolist()
-        ngrams_counter[m] = count_ngrams(monthly_comments)
-
-    return ngrams_counter
-
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--subreddit", required=True, type=str)
-    args = parser.parse_args()
-
-    print(args.subreddit)
-
-    sample_df_folder = './data/samples/'
-    utt_fp = f"{sample_df_folder}{args.subreddit}-comments.pk"
-    stash = get_ngrams_counter(utt_fp)
-
-    pk.dump(stash, open(f"{args.subreddit}.pk", "wb"))
-
+    jsd_diffs[month_1][month_2] = my_jsd.total_diff
