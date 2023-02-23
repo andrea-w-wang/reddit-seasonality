@@ -1,31 +1,27 @@
+import pickle as pk
+
 import numpy as np
 import pandas as pd
-import pickle as pk
-import seaborn as sns
 # initialize ST5 model
 from sentence_transformers import SentenceTransformer
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
+import argparse
+import torch
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--subreddit", required=True, type=str)
+args = parser.parse_args()
 
-def run(subreddit):
-    model = SentenceTransformer('sentence-transformers/sentence-t5-base')
+sample_df_folder = './data/samples/'
+data = pk.load(open(f"{sample_df_folder}{args.subreddit}-comments.pk", "rb"))
+model = SentenceTransformer('sentence-transformers/sentence-t5-base', device=device)
 
-    df = pk.load(open(f"data/{subreddit}-comments.pk", "rb"))
-    sentences = list(df['text'].values)
-
+for i in range(1):
+    print(i)
+    sample = np.random.choice(data, size=1000, replace=False)
+    sentences = [x['text'] for x in sample]
     embeddings = model.encode(sentences)
-    return embeddings
+    monthly_embed = pd.DataFrame(embeddings).groupby([x['year-month'] for x in sample]).mean()
+    stash = (np.array(monthly_embed.index), monthly_embed.values)
 
-
-if __name__ == '__main__':
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-sr", "--subreddit", required=True, type=str, nargs='+')
-    args = parser.parse_args()
-
-    for subreddit in args.subreddit:
-        print(subreddit)
-        embeddings = run(subreddit)
-        pk.dump(embeddings, open(f"./data/{subreddit}-sentence-embeddings.pk", "wb"))
+    pk.dump(stash, open(f"./data/output/embeddings/{args.subreddit}-sample{i+1}.pk", "wb"))
