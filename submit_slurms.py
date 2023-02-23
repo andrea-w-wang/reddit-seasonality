@@ -38,4 +38,4 @@ python3 {args.py_func} --subreddit {subreddit}
             """
         )
 
-    # os.system(f"sbatch --requeue {job_prefix}-{subreddit}.sub")
+    os.system(f"sbatch --requeue {job_prefix}-{subreddit}.sub")
