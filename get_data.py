@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--subreddit", required=True, type=str)
 args = parser.parse_args()
 
+print(args.subreddit)
 download(f'subreddit-{args.subreddit}', data_dir='./data/convokit_downloads/')
 
 comments = list()
