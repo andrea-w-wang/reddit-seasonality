@@ -6,6 +6,7 @@ from math import sqrt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn import preprocessing
 import statsmodels.formula.api as smf
 from dateutil import relativedelta
 from dateutil.parser import parse
@@ -35,10 +36,17 @@ def run_one_sample(metadata, embeddings):
                                       np.abs(
                                           relativedelta.relativedelta(parse(r['month_2']), parse(r['month_1'])).months),
                                       axis=1)
-    mod = smf.ols(formula='emb ~ C(same_year) + C(same_month) + months_apart', data=long.dropna())
+
+    scaler = preprocessing.MinMaxScaler()
+    norms = scaler.fit_transform(long[['emb', 'emb_rank', "months_apart"]].values)
+    long['normalized_emb'] = norms[:, 0]
+    long['normalized_emb_rank'] = norms[:, 1]
+    long['normalized_months_apart'] = norms[:, 2]
+    mod = smf.ols(formula='normalized_emb ~ C(same_year) + C(same_month) + normalized_months_apart', data=long.dropna())
     emb_res = mod.fit()
 
-    mod = smf.ols(formula='emb_rank ~ C(same_year) + C(same_month) + months_apart', data=long.dropna())
+    mod = smf.ols(formula='normalized_emb_rank ~ C(same_year) + C(same_month) + normalized_months_apart',
+                  data=long.dropna())
     rank_res = mod.fit()
     return emb_res, rank_res
 
@@ -107,4 +115,4 @@ if __name__ == '__main__':
     axes[1].set_title(f'r/{args.subreddit}, output = embedding distance')
     for i, p in enumerate(params):
         plot_confidence_interval(i + 1, emb_params[p], ax=axes[1])
-    plt.savefig(f"./figures/{args.subreddit}-emb-reg.png")
+    plt.savefig(f"./figures/{args.subreddit}-emb-reg-minmax.png")
