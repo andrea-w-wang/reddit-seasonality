@@ -19,11 +19,14 @@ def count_ngrams(input_texts, n=1):
     return ngrams_counter
 
 
-def get_ngrams_counter(utt_fp=None, df=None):
+def get_ngrams_counter(utt_fp=None, utts=None):
     if utt_fp:
         data = pk.load(open(utt_fp, "rb"))
-        df = pd.DataFrame(list(data))
-
+    elif utts:
+        data = utts
+    else:
+        raise Exception("at least utt_fp or utts must be provided")
+    df = pd.DataFrame(list(data))
     ngrams_counter = dict()
     months = df['year-month'].unique()
     for m in months:
