@@ -20,9 +20,9 @@ def count_ngrams(input_texts, n=1):
 
 
 def get_ngrams_counter(utt_fp=None, utts=None):
-    if utt_fp:
+    if utt_fp is not None:
         data = pk.load(open(utt_fp, "rb"))
-    elif utts:
+    elif utts is not None:
         data = utts
     else:
         raise Exception("at least utt_fp or utts must be provided")
