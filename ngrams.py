@@ -30,7 +30,6 @@ def get_ngrams_counter(utt_fp=None, utts=None):
     ngrams_counter = dict()
     months = df['year-month'].unique()
     for m in months:
-        print("\t", m)
         monthly_comments = df[df['year-month'] == m]['text'].tolist()
         ngrams_counter[m] = count_ngrams(monthly_comments)
 

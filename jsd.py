@@ -15,7 +15,6 @@ def run(ngrams_counter):
 
     jsd_diffs = defaultdict(dict)
     for month_1, month_2 in month_pairs:
-        print("\t", month_1, month_2)
 
         my_jsd = metrics.JSD(ngrams_counter[month_1],
                              ngrams_counter[month_2],
