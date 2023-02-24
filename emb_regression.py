@@ -6,11 +6,12 @@ from math import sqrt
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn import preprocessing
 import statsmodels.formula.api as smf
 from dateutil import relativedelta
 from dateutil.parser import parse
+from sklearn import preprocessing
 from sklearn.metrics.pairwise import euclidean_distances
+from statsmodels.miscmodels.ordinal_model import OrderedModel
 from tqdm import tqdm
 
 
@@ -43,12 +44,15 @@ def run_one_sample(metadata, embeddings):
     long['normalized_emb_rank'] = norms[:, 1]
     long['normalized_months_apart'] = norms[:, 2]
     mod = smf.ols(formula='normalized_emb ~ C(same_year) + C(same_month) + normalized_months_apart', data=long.dropna())
-    emb_res = mod.fit()
+    dist_res = mod.fit()
 
-    mod = smf.ols(formula='normalized_emb_rank ~ C(same_year) + C(same_month) + normalized_months_apart',
-                  data=long.dropna())
+    mod = OrderedModel.from_formula("emb_rank ~ C(same_year) + C(same_month) + months_apart", data=long.dropna(),
+                                    distr='logit')
+
+    mod = mod.fit(method='bfgs')
     rank_res = mod.fit()
-    return emb_res, rank_res
+
+    return dist_res, rank_res
 
 
 def plot_confidence_interval(x, values, z=1.96, color='#2187bb', horizontal_line_width=0.25, ax=None):
@@ -94,10 +98,10 @@ if __name__ == '__main__':
         emb_res, rank_res = run_one_sample(metadata, embeddings)
 
         for k, v in emb_res.params.to_dict().items():
-            emb_params[k].append(v)
+            emb_params[k].append({"param": v, "pvalue": emb_res.pvalues[k]})
 
         for k, v in rank_res.params.to_dict().items():
-            rank_params[k].append(v)
+            rank_params[k].append({"param": v, "pvalue": rank_res.pvalues[k]})
 
     pk.dump(rank_params, open(f"data/output/regression/{args.subreddit}-emb_rank_params.pk", "wb"))
     pk.dump(emb_params, open(f"data/output/regression/{args.subreddit}-emb_params.pk", "wb"))
