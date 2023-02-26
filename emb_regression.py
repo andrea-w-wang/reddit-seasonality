@@ -49,8 +49,7 @@ def run_one_sample(metadata, embeddings):
     mod = OrderedModel.from_formula("emb_rank ~ C(same_year) + C(same_month) + months_apart", data=long.dropna(),
                                     distr='logit')
 
-    mod = mod.fit(method='bfgs')
-    rank_res = mod.fit()
+    rank_res = mod.fit(method='bfgs')
 
     return dist_res, rank_res
 
