@@ -1,7 +1,4 @@
 import pickle as pk
-import statistics
-from collections import defaultdict
-from math import sqrt
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,29 +43,29 @@ def run_one_sample(metadata):
     return dist_res, rank_res
 
 
-def plot_confidence_interval(x, values, z=1.96, color='#2187bb', horizontal_line_width=0.25, ax=None):
-    mean = statistics.mean(values)
-    stdev = statistics.stdev(values)
-    confidence_interval = z * stdev / sqrt(len(values))
-
-    left = x - horizontal_line_width / 2
-    top = mean - confidence_interval
-    right = x + horizontal_line_width / 2
-    bottom = mean + confidence_interval
-
-    if ax:
-        ax.plot([x, x], [top, bottom], color=color)
-        ax.plot([left, right], [top, top], color=color)
-        ax.plot([left, right], [bottom, bottom], color=color)
-        ax.plot(x, mean, 'o', color='#f44336')
-
-    else:
-        plt.plot([x, x], [top, bottom], color=color)
-        plt.plot([left, right], [top, top], color=color)
-        plt.plot([left, right], [bottom, bottom], color=color)
-        plt.plot(x, mean, 'o', color='#f44336')
-
-    return mean, confidence_interval
+# def plot_confidence_interval(x, values, z=1.96, color='#2187bb', horizontal_line_width=0.25, ax=None):
+#     mean = statistics.mean(values)
+#     stdev = statistics.stdev(values)
+#     confidence_interval = z * stdev / sqrt(len(values))
+#
+#     left = x - horizontal_line_width / 2
+#     top = mean - confidence_interval
+#     right = x + horizontal_line_width / 2
+#     bottom = mean + confidence_interval
+#
+#     if ax:
+#         ax.plot([x, x], [top, bottom], color=color)
+#         ax.plot([left, right], [top, top], color=color)
+#         ax.plot([left, right], [bottom, bottom], color=color)
+#         ax.plot(x, mean, 'o', color='#f44336')
+#
+#     else:
+#         plt.plot([x, x], [top, bottom], color=color)
+#         plt.plot([left, right], [top, top], color=color)
+#         plt.plot([left, right], [bottom, bottom], color=color)
+#         plt.plot(x, mean, 'o', color='#f44336')
+#
+#     return mean, confidence_interval
 
 
 if __name__ == '__main__':
@@ -81,32 +78,32 @@ if __name__ == '__main__':
     print(args.subreddit)
     metadata = pk.load(open(f"./data/samples/{args.subreddit}-comments.pk", "rb"))
 
-    dist_params = defaultdict(list)
-    rank_params = defaultdict(list)
+    dist_params = list()
+    rank_params = list()
 
     for i in tqdm(range(500)):
         dist_res, rank_res = run_one_sample(metadata)
 
         for k, v in dist_res.params.to_dict().items():
-            dist_params[k].append({"param": v, "pvalue": dist_res.pvalues[k]})
+            dist_params.append({"variable": k, "coefficient": v, "pvalue": dist_res.pvalues[k]})
 
         for k, v in rank_res.params.to_dict().items():
-            rank_params[k].append({"param": v, "pvalue": rank_res.pvalues[k]})
+            rank_params.append({"variable": k, "coefficient": v, "pvalue": rank_res.pvalues[k]})
 
     pk.dump(rank_params, open(f"data/output/regression/{args.subreddit}-jsd_rank_params.pk", "wb"))
     pk.dump(dist_params, open(f"data/output/regression/{args.subreddit}-jsd_params.pk", "wb"))
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 8))
 
-    params = list(rank_params.keys())
-    axes[0].set_xticks(range(1, len(params) + 1), params)
-    axes[0].set_title(f'r/{args.subreddit}, output = JSD')
-    for i, p in enumerate(params):
-        plot_confidence_interval(i + 1, rank_params[p], ax=axes[0])
+    import seaborn as sns
+    import pandas as pd
 
-    params = list(dist_params.keys())
-    axes[1].set_xticks(range(1, len(params) + 1), params)
-    axes[1].set_title(f'r/{args.subreddit}, output = JSD')
-    for i, p in enumerate(params):
-        plot_confidence_interval(i + 1, dist_params[p], ax=axes[1])
+    df = pd.DataFrame(dist_params)
+    sns.boxplot(data=df, x='variable', y='coefficient', ax=axes[0])
+    axes[0].set_title(f'r/{args.subreddit}, output = JSD')
+
+    df = pd.DataFrame(rank_params)
+    sns.boxplot(data=df, x='variable', y='coefficient', ax=axes[1])
+    axes[1].set_title(f'r/{args.subreddit}, output = JSD rank')
+
     plt.savefig(f"./figures/{args.subreddit}-jsd-reg-minmax.png")
