@@ -39,7 +39,7 @@ def run(ngrams_counter):
     long = long.sort_values(["level_0", "level_1"])
     long = long.rename({"level_0": "month_1", "level_1": "month_2", 0: "jsd"}, axis=1)
     long['jsd_rank'] = long.groupby("month_1")["jsd"].rank()
-    return long
+    return jsd_df.columns, jsd_df.values, long
 
 
 if __name__ == '__main__':
@@ -50,5 +50,5 @@ if __name__ == '__main__':
     print(args.subreddit)
 
     ngrams_counter = pk.load(open(f"data/output/ngrams/{args.subreddit}.pk", "rb"))
-    long = run(ngrams_counter)
+    _, _, long = run(ngrams_counter)
     pk.dump(long, open(f"data/output/long/jsd/{args.subreddit}.pk", "wb"))
