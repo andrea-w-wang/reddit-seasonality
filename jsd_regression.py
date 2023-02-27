@@ -1,11 +1,8 @@
 import pickle as pk
 
-import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import statsmodels.formula.api as smf
-from dateutil import relativedelta
-from dateutil.parser import parse
-from sklearn import preprocessing
 from statsmodels.miscmodels.ordinal_model import OrderedModel
 from tqdm import tqdm
 
@@ -13,59 +10,30 @@ import jsd
 import ngrams
 
 
-def run_one_sample(metadata):
+def dist_for_one_sample(metadata):
     sample_idx = np.random.choice(len(metadata), size=50000, replace=True)
     sample_meta = metadata[sample_idx]
     ngrams_counter = ngrams.get_ngrams_counter(utts=sample_meta)
-    long = jsd.run(ngrams_counter)
+    months, dist, long = jsd.run(ngrams_counter)
+    return dist, months, long
+
+
+def run_regression(long):
     long['same_year'] = long.apply(lambda r: 1 if r['month_1'].split("-")[0] == r['month_2'].split("-")[0] else 0,
                                    axis=1)
     long['same_month'] = long.apply(lambda r: 1 if r['month_1'].split("-")[1] == r['month_2'].split("-")[1] else 0,
                                     axis=1)
-    long['months_apart'] = long.apply(lambda r:
-                                      np.abs(
-                                          relativedelta.relativedelta(parse(r['month_2']), parse(r['month_1'])).months),
-                                      axis=1)
+    long["n_months"] = np.abs(
+        (pd.to_datetime(long["month_2"]).dt.to_period("M") - pd.to_datetime(long["month_1"]).dt.to_period("M")).apply(
+            lambda x: x.n))
 
-    scaler = preprocessing.MinMaxScaler()
-    norms = scaler.fit_transform(long[['jsd', 'jsd_rank', "months_apart"]].values)
-    long['normalized_jsd'] = norms[:, 0]
-    long['normalized_jsd_rank'] = norms[:, 1]
-    long['normalized_months_apart'] = norms[:, 2]
-    mod = smf.ols(formula='normalized_jsd ~ C(same_year) + C(same_month) + normalized_months_apart', data=long.dropna())
+    mod = smf.ols(formula='jsd ~ C(n_months)', data=long.dropna())
     dist_res = mod.fit()
 
-    mod = OrderedModel.from_formula("jsd_rank ~ C(same_year) + C(same_month) + months_apart", data=long.dropna(),
+    mod = OrderedModel.from_formula("jsd_rank ~ C(n_months)", data=long.dropna(),
                                     distr='logit')
-
     rank_res = mod.fit(method='bfgs')
-
     return dist_res, rank_res
-
-
-# def plot_confidence_interval(x, values, z=1.96, color='#2187bb', horizontal_line_width=0.25, ax=None):
-#     mean = statistics.mean(values)
-#     stdev = statistics.stdev(values)
-#     confidence_interval = z * stdev / sqrt(len(values))
-#
-#     left = x - horizontal_line_width / 2
-#     top = mean - confidence_interval
-#     right = x + horizontal_line_width / 2
-#     bottom = mean + confidence_interval
-#
-#     if ax:
-#         ax.plot([x, x], [top, bottom], color=color)
-#         ax.plot([left, right], [top, top], color=color)
-#         ax.plot([left, right], [bottom, bottom], color=color)
-#         ax.plot(x, mean, 'o', color='#f44336')
-#
-#     else:
-#         plt.plot([x, x], [top, bottom], color=color)
-#         plt.plot([left, right], [top, top], color=color)
-#         plt.plot([left, right], [bottom, bottom], color=color)
-#         plt.plot(x, mean, 'o', color='#f44336')
-#
-#     return mean, confidence_interval
 
 
 if __name__ == '__main__':
@@ -80,9 +48,15 @@ if __name__ == '__main__':
 
     dist_params = list()
     rank_params = list()
-
+    dist_stash = None
     for i in tqdm(range(500)):
-        dist_res, rank_res = run_one_sample(metadata)
+        dist, months, long = dist_for_one_sample(metadata)
+        dist_res, rank_res = run_regression(long)
+
+        if i == 0:
+            dist_stash = np.array([dist])
+        else:
+            dist_stash = np.concatenate((dist_stash, np.array([dist])))
 
         for k, v in dist_res.params.to_dict().items():
             dist_params.append({"variable": k, "coefficient": v, "pvalue": dist_res.pvalues[k]})
@@ -90,20 +64,72 @@ if __name__ == '__main__':
         for k, v in rank_res.params.to_dict().items():
             rank_params.append({"variable": k, "coefficient": v, "pvalue": rank_res.pvalues[k]})
 
+    dist_stash[np.isnan(dist_stash)] = 0
+
+    pk.dump((months, dist_stash), open(f"data/output/distances/{args.subreddit}-jsd.pk", "wb"))
     pk.dump(rank_params, open(f"data/output/regression/{args.subreddit}-jsd_rank_params.pk", "wb"))
     pk.dump(dist_params, open(f"data/output/regression/{args.subreddit}-jsd_params.pk", "wb"))
 
-    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
-
+    # plot distance heatmap
     import seaborn as sns
-    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle(f"r/{args.subreddit} Jensen-Shannon Divergence")
+    mean_stash = dist_stash.mean(axis=0)
+    mean_stash[mean_stash == 0] = np.nan
+    dist = pd.DataFrame(mean_stash, index=months)
+    dist.columns = months
+    ax = sns.heatmap(dist, cmap='PiYG', ax=axes[0])
+    ax.set_title(f"JSD")
+
+    from scipy.stats import rankdata
+    from scipy.stats import rankdata
+
+    mean_rank = rankdata(dist_stash, axis=1).mean(axis=0)
+    np.fill_diagonal(mean_rank, np.nan)
+    dist = pd.DataFrame(mean_rank, index=months)
+    dist.columns = months
+    sns.heatmap(dist, cmap='PiYG', ax=axes[1])
+    axes[1].set_title(f"Rank by JSD")
+    plt.savefig(f"./figures/{args.subreddit}-jsd-heatmap.jpg", bbox_inches='tight')
+
+    # plot dist params
+    import re
 
     df = pd.DataFrame(dist_params)
-    sns.boxplot(data=df, x='variable', y='coefficient', ax=axes[0])
-    axes[0].set_title(f'r/{args.subreddit}, output = JSD')
+    cat_df = df[df['variable'].str.startswith("C(")].copy()
+    cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))
+    cat_df['variable_name'] = cat_df['variable'].apply(lambda v: re.match("C\((.*)\)", v).group(1))
 
+    fig, axes = plt.subplots(2, 1, figsize=(15, 10))
+    fig.suptitle(f"r/{args.subreddit} regression, output = JSD")
+    ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
+    ax.set_xlabel("n_months")
+    ax.set_title(f"coefficients")
+
+    ax = sns.boxplot(data=cat_df, x='variable_value', y='pvalue', ax=axes[1])
+    ax.set_xlabel("n_months")
+    ax.set_title(f"p values")
+    ax.axhline(0.05, color='red', label='p = 0.05')
+    plt.legend()
+    plt.savefig(f"./figures/{args.subreddit}-jsd-regression.jpg", bbox_inches='tight')
+
+    # plot rank params
     df = pd.DataFrame(rank_params)
-    sns.boxplot(data=df, x='variable', y='coefficient', ax=axes[1])
-    axes[1].set_title(f'r/{args.subreddit}, output = JSD rank')
+    cat_df = df[df['variable'].str.startswith("C(")].copy()
+    cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))
+    cat_df['variable_name'] = cat_df['variable'].apply(lambda v: re.match("C\((.*)\)", v).group(1))
 
-    plt.savefig(f"./figures/{args.subreddit}-jsd-reg-minmax.png")
+    fig, axes = plt.subplots(2, 1, figsize=(15, 10))
+    fig.suptitle(f"r/{args.subreddit} regression, output = Rank by JSD")
+    ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
+    ax.set_xlabel("n_months")
+    ax.set_title(f"coefficients")
+
+    ax = sns.boxplot(data=cat_df, x='variable_value', y='pvalue', ax=axes[1])
+    ax.set_xlabel("n_months")
+    ax.set_title(f"p values")
+    ax.axhline(0.05, color='red', label='p = 0.05')
+    plt.legend()
+    plt.savefig(f"./figures/{args.subreddit}-jsd-rank-regression.jpg", bbox_inches='tight')
