@@ -26,8 +26,9 @@ def run_regression(long):
     long["n_months"] = np.abs(
         (pd.to_datetime(long["month_2"]).dt.to_period("M") - pd.to_datetime(long["month_1"]).dt.to_period("M")).apply(
             lambda x: x.n))
-
-    mod = smf.ols(formula='jsd ~ C(n_months)', data=long.dropna())
+    long = long[long['n_months'] <= 36]
+    x = long.dropna().drop_duplicates(subset=["jsd", "n_months"])
+    mod = smf.ols(formula='jsd ~ C(n_months)', data=x)
     dist_res = mod.fit()
 
     mod = OrderedModel.from_formula("jsd_rank ~ C(n_months)", data=long.dropna(),
