@@ -33,8 +33,10 @@ def run_regression(dist, months):
     long["n_months"] = np.abs(
         (pd.to_datetime(long["month_2"]).dt.to_period("M") - pd.to_datetime(long["month_1"]).dt.to_period("M")).apply(
             lambda x: x.n))
+    long = long[long['n_months'] <= 36]
 
-    mod = smf.ols(formula='emb ~ C(n_months)', data=long.dropna())
+    x = long.dropna().drop_duplicates(subset=["emb", "n_months"])
+    mod = smf.ols(formula='emb ~ C(n_months)', data=x)
     dist_res = mod.fit()
 
     mod = OrderedModel.from_formula("emb_rank ~ C(n_months)", data=long.dropna(),
