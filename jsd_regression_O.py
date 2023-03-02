@@ -110,6 +110,7 @@ if __name__ == '__main__':
 
     # plot rank params
     df = pd.DataFrame(rank_params)
+    df = df[~df['variable'].str.contains("/")].copy()
     fig, axes = plt.subplots(2, 1, figsize=(15, 10))
     fig.suptitle(f"r/{args.subreddit} regression, output = Rank by JSD")
     ax = sns.boxplot(data=df, x='variable', y='coefficient', ax=axes[0])
