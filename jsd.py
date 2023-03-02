@@ -38,6 +38,7 @@ def run(ngrams_counter):
     long = long.sort_values(["level_0", "level_1"])
     long = long.rename({"level_0": "month_1", "level_1": "month_2", 0: "jsd"}, axis=1)
     long['jsd_rank'] = long.groupby("month_1")["jsd"].rank()
+    long['jsd_rank'] = long['jsd_rank'] - 1
     return jsd_df.columns, jsd_df.values, long
 
 
