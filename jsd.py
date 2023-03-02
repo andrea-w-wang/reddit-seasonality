@@ -25,12 +25,12 @@ def run(ngrams_counter):
 
     first_month = all_months[0]
     last_month = all_months[-1]
-    jsd_diffs[first_month][first_month] = 0
-    jsd_diffs[last_month][last_month] = 0
+    jsd_diffs[first_month][first_month] = np.nan
+    jsd_diffs[last_month][last_month] = np.nan
 
     jsd_df = pd.DataFrame(jsd_diffs)
     jsd_df = jsd_df.sort_index()
-    X = jsd_df.values
+    X = jsd_df.fillna(0).values
     X2 = X + X.T - np.diag(np.diag(X))
     jsd_df = pd.DataFrame(X2, columns=jsd_df.columns, index=jsd_df.index)
 
