@@ -91,7 +91,6 @@ if __name__ == '__main__':
     axes[0].set_title(f"Euclidean distance")
 
     from scipy.stats import rankdata
-    from scipy.stats import rankdata
 
     mean_rank = rankdata(dist_stash, axis=1).mean(axis=0)
     np.fill_diagonal(mean_rank, np.nan)
@@ -102,41 +101,42 @@ if __name__ == '__main__':
     plt.savefig(f"./figures/{args.subreddit}-emb-heatmap-I.jpg", bbox_inches='tight')
 
     # plot dist params
-    import re
-
     df = pd.DataFrame(dist_params)
-    cat_df = df[df['variable'].str.startswith("C(")].copy()
-    cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))
-    cat_df['variable_name'] = cat_df['variable'].apply(lambda v: re.match("C\((.*)\)", v).group(1))
 
-    fig, axes = plt.subplots(2, 1, figsize=(15, 10))
-    fig.suptitle(f"r/{args.subreddit} regression, output = embedding distance")
-    ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
-    ax.set_xlabel("n_months")
-    ax.set_title(f"coefficients")
+    for variable_name in ['n_months', 'month_1_year', 'month_1_month']:
+        cat_df = df[df['variable'].str.contains(variable_name)].copy()
+        cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))
+        cat_df = cat_df.rename({"variable": variable_name}, axis=1)
 
-    ax = sns.boxplot(data=cat_df, x='variable_value', y='pvalue', ax=axes[1])
-    ax.set_xlabel("n_months")
-    ax.set_title(f"p values")
-    ax.axhline(0.05, color='red', label='p = 0.05')
-    plt.legend()
-    plt.savefig(f"./figures/{args.subreddit}-emb-regression-I.jpg", bbox_inches='tight')
+        fig, axes = plt.subplots(2, 1, figsize=(15, 10))
+        fig.suptitle(f"r/{args.subreddit} regression, output = embedding distance")
+        ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
+        ax.set_xlabel(variable_name)
+        ax.set_title(f"coefficients")
+
+        ax = sns.boxplot(data=cat_df, x='variable_value', y='pvalue', ax=axes[1])
+        ax.set_xlabel(variable_name)
+        ax.set_title(f"p values")
+        ax.axhline(0.05, color='red', label='p = 0.05')
+        plt.legend()
+        plt.savefig(f"./figures/{args.subreddit}-emb-regression-{variable_name}-I.jpg", bbox_inches='tight')
 
     # plot rank params
     df = pd.DataFrame(rank_params)
-    cat_df = df[df['variable'].str.startswith("C(")].copy()
-    cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))
-    cat_df['variable_name'] = cat_df['variable'].apply(lambda v: re.match("C\((.*)\)", v).group(1))
+    for variable_name in ['n_months', 'month_1_year', 'month_1_month']:
+        cat_df = df[df['variable'].str.contains(variable_name)].copy()
+        cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))
+        cat_df = cat_df.rename({"variable": variable_name}, axis=1)
 
-    fig, axes = plt.subplots(2, 1, figsize=(15, 10))
-    fig.suptitle(f"r/{args.subreddit} regression, output = embedding distance rank")
-    ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
-    ax.set_xlabel("n_months")
-    ax.set_title(f"coefficients")
+        fig, axes = plt.subplots(2, 1, figsize=(15, 10))
+        fig.suptitle(f"r/{args.subreddit} regression, output = embedding distance")
+        ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
+        ax.set_xlabel(variable_name)
+        ax.set_title(f"coefficients")
 
-    ax = sns.boxplot(data=cat_df, x='variable_value', y='pvalue', ax=axes[1])
-    ax.set_xlabel("n_months")
-    ax.set_title(f"p values")
-    ax.axhline(0.05, color='red', label='p = 0.05')
-    plt.legend()
-    plt.savefig(f"./figures/{args.subreddit}-emb-rank-regression-I.jpg", bbox_inches='tight')
+        ax = sns.boxplot(data=cat_df, x='variable_value', y='pvalue', ax=axes[1])
+        ax.set_xlabel(variable_name)
+        ax.set_title(f"p values")
+        ax.axhline(0.05, color='red', label='p = 0.05')
+        plt.legend()
+        plt.savefig(f"./figures/{args.subreddit}-emb-rank-regression-{variable_name}-I.jpg", bbox_inches='tight')
