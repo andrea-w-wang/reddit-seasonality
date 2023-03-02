@@ -129,7 +129,7 @@ if __name__ == '__main__':
         cat_df = cat_df.rename({"variable": variable_name}, axis=1)
 
         fig, axes = plt.subplots(2, 1, figsize=(15, 10))
-        fig.suptitle(f"r/{args.subreddit} regression, output = embedding distance")
+        fig.suptitle(f"r/{args.subreddit} regression, output = embedding distance rank")
         ax = sns.boxplot(data=cat_df, x='variable_value', y='coefficient', ax=axes[0])
         ax.set_xlabel(variable_name)
         ax.set_title(f"coefficients")
