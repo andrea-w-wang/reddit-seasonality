@@ -22,7 +22,7 @@ def run_regression(long):
     long["n_months"] = np.abs(
         (pd.to_datetime(long["month_2"]).dt.to_period("M") - pd.to_datetime(long["month_1"]).dt.to_period("M")).apply(
             lambda x: x.n))
-    long = long[long['n_months'] <= 36]
+    long = long[long['n_months'] <= 36].copy()
     long['month_1_year'] = long['month_1'].apply(lambda t: t.split("-")[0])
     long['month_1_month'] = long['month_1'].apply(lambda t: t.split("-")[1])
     x = long.dropna().drop_duplicates(subset=["jsd", "month_1_year", "month_1_month", "n_months"])

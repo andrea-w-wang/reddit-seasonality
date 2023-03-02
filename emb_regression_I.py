@@ -29,7 +29,7 @@ def run_regression(dist, months):
     long["n_months"] = np.abs(
         (pd.to_datetime(long["month_2"]).dt.to_period("M") - pd.to_datetime(long["month_1"]).dt.to_period("M")).apply(
             lambda x: x.n))
-    long = long[long['n_months'] <= 36]
+    long = long[long['n_months'] <= 36].copy()
 
     long['month_1_year'] = long['month_1'].apply(lambda t: t.split("-")[0])
     long['month_1_month'] = long['month_1'].apply(lambda t: t.split("-")[1])
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     ax.set_title(f"p values")
     ax.axhline(0.05, color='red', label='p = 0.05')
     plt.legend()
-    plt.savefig(f"./figures/{args.subreddit}-emb-regression.jpg", bbox_inches='tight')
+    plt.savefig(f"./figures/{args.subreddit}-emb-regression-I.jpg", bbox_inches='tight')
 
     # plot rank params
     df = pd.DataFrame(rank_params)
