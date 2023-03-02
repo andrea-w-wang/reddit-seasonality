@@ -1,14 +1,14 @@
 import pickle as pk
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import statsmodels.formula.api as smf
 from statsmodels.miscmodels.ordinal_model import OrderedModel
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 from tqdm import tqdm
-from emb_regression import dist_for_one_sample, plot_distance_heatmap
+
+from emb_regression import dist_for_one_sample
 
 
 def run_regression(long):
@@ -37,6 +37,7 @@ def run_regression(long):
 
 if __name__ == '__main__':
     import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--subreddit", required=True, type=str)
     args = parser.parse_args()
@@ -70,7 +71,24 @@ if __name__ == '__main__':
     pk.dump(dist_params, open(f"data/output/regression/{args.subreddit}-emb_params-II.pk", "wb"))
 
     # plot distance heatmap
-    plot_distance_heatmap(months, dist_stash, f"./figures/{args.subreddit}-emb-heatmap-II.jpg")
+    from scipy.stats import rankdata
+
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle(f"r/{args.subreddit} Sentence Embedding")
+    mean_stash = dist_stash.mean(axis=0)
+    mean_stash[mean_stash == 0] = np.nan
+    dist = pd.DataFrame(mean_stash, index=months)
+    dist.columns = months
+    sns.heatmap(dist, cmap='PiYG', ax=axes[0])
+    axes[0].set_title(f"Euclidean distance")
+
+    mean_rank = rankdata(dist_stash, axis=1).mean(axis=0)
+    np.fill_diagonal(mean_rank, np.nan)
+    dist = pd.DataFrame(mean_rank, index=months)
+    dist.columns = months
+    sns.heatmap(dist, cmap='PiYG', ax=axes[1])
+    axes[1].set_title(f"Rank distance")
+    plt.savefig(f"./figures/{args.subreddit}-emb-heatmap-II.jpg", bbox_inches='tight')
 
     # plot dist params
     df = pd.DataFrame(dist_params)
