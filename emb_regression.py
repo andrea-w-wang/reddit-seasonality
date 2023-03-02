@@ -1,10 +1,11 @@
 import pickle as pk
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import statsmodels.formula.api as smf
+import seaborn as sns
+from scipy.stats import rankdata
 from sklearn.metrics.pairwise import euclidean_distances
-from statsmodels.miscmodels.ordinal_model import OrderedModel
 from tqdm import tqdm
 
 
@@ -14,53 +15,44 @@ def dist_for_one_sample(metadata, embeddings):
     sample_emb = embeddings[sample_idx, :]
     monthly_emb = pd.DataFrame(sample_emb).groupby([x['year-month'] for x in sample_meta]).mean()
     dist = euclidean_distances(monthly_emb.values)
-    np.fill_diagonal(dist, np.nan)
     months = list(monthly_emb.index)
-    return dist, months
-
-
-def run_regression(dist, months):
     dist_df = pd.DataFrame(dist, index=months)
     dist_df.columns = months
     long = dist_df.unstack().reset_index()
     long = long.sort_values(["level_0", "level_1"])
     long = long.rename({"level_0": "month_1", "level_1": "month_2", 0: "emb"}, axis=1)
     long['emb_rank'] = long.groupby("month_1")["emb"].rank()
-    long['same_year'] = long.apply(lambda r: 1 if r['month_1'].split("-")[0] == r['month_2'].split("-")[0] else 0,
-                                   axis=1)
-    long['same_month'] = long.apply(lambda r: 1 if r['month_1'].split("-")[1] == r['month_2'].split("-")[1] else 0,
-                                    axis=1)
-    long["n_months"] = np.abs(
-        (pd.to_datetime(long["month_2"]).dt.to_period("M") - pd.to_datetime(long["month_1"]).dt.to_period("M")).apply(
-            lambda x: x.n))
-    long = long[long['n_months'] <= 36]
 
-    x = long.dropna().drop_duplicates(subset=["emb", "n_months"])
-    mod = smf.ols(formula='emb ~ C(n_months)', data=x)
-    dist_res = mod.fit()
-
-    mod = OrderedModel.from_formula("emb_rank ~ C(n_months)", data=long.dropna(),
-                                    distr='logit')
-    rank_res = mod.fit(method='bfgs')
-    return dist_res, rank_res
+    return dist, months, long
 
 
-if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-s", "--subreddit", required=True, type=str)
-    args = parser.parse_args()
+def plot_distance_heatmap(months, dist_stash, output_path):
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+    fig.suptitle(f"r/{args.subreddit} Sentence Embedding")
+    mean_stash = dist_stash.mean(axis=0)
+    mean_stash[mean_stash == 0] = np.nan
+    dist = pd.DataFrame(mean_stash, index=months)
+    dist.columns = months
+    sns.heatmap(dist, cmap='PiYG', ax=axes[0])
+    axes[0].set_title(f"Euclidean distance")
 
-    print(args.subreddit)
-    metadata = pk.load(open(f"./data/samples/{args.subreddit}-comments.pk", "rb"))
-    embeddings = pk.load(open(f"./data/output/embeddings/{args.subreddit}.pk", "rb"))
+    mean_rank = rankdata(dist_stash, axis=1).mean(axis=0)
+    np.fill_diagonal(mean_rank, np.nan)
+    dist = pd.DataFrame(mean_rank, index=months)
+    dist.columns = months
+    sns.heatmap(dist, cmap='PiYG', ax=axes[1])
+    axes[1].set_title(f"Rank distance")
+    plt.savefig(output_path, bbox_inches='tight')
 
+
+def bootstrap(run_regression, n=500):
     dist_params = list()
     rank_params = list()
     dist_stash = None
-    for i in tqdm(range(500)):
-        dist, months = dist_for_one_sample(metadata, embeddings)
-        dist_res, rank_res = run_regression(dist, months)
+    months = None
+    for i in tqdm(range(n)):
+        dist, months, long = dist_for_one_sample(metadata, embeddings)
+        dist_res, rank_res = run_regression(long)
 
         if i == 0:
             dist_stash = np.array([dist])
@@ -75,36 +67,30 @@ if __name__ == '__main__':
 
     dist_stash[np.isnan(dist_stash)] = 0
 
+    return months, dist_stash, dist_params, rank_params
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--subreddit", required=True, type=str)
+    args = parser.parse_args()
+
+    print(args.subreddit)
+    metadata = pk.load(open(f"./data/samples/{args.subreddit}-comments.pk", "rb"))
+    embeddings = pk.load(open(f"./data/output/embeddings/{args.subreddit}.pk", "rb"))
+
+    months, dist_stash, dist_params, rank_params = bootstrap(n=500)
+
     pk.dump((months, dist_stash), open(f"data/output/distances/{args.subreddit}-emb.pk", "wb"))
     pk.dump(rank_params, open(f"data/output/regression/{args.subreddit}-emb_rank_params.pk", "wb"))
     pk.dump(dist_params, open(f"data/output/regression/{args.subreddit}-emb_params.pk", "wb"))
 
-    # plot distance heatmap
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
-    fig.suptitle(f"r/{args.subreddit} Sentence Embedding")
-    mean_stash = dist_stash.mean(axis=0)
-    mean_stash[mean_stash == 0] = np.nan
-    dist = pd.DataFrame(mean_stash, index=months)
-    dist.columns = months
-    sns.heatmap(dist, cmap='PiYG', ax=axes[0])
-    axes[0].set_title(f"Euclidean distance")
-
-    from scipy.stats import rankdata
-    from scipy.stats import rankdata
-
-    mean_rank = rankdata(dist_stash, axis=1).mean(axis=0)
-    np.fill_diagonal(mean_rank, np.nan)
-    dist = pd.DataFrame(mean_rank, index=months)
-    dist.columns = months
-    sns.heatmap(dist, cmap='PiYG', ax=axes[1])
-    axes[1].set_title(f"Rank distance")
-    plt.savefig(f"./figures/{args.subreddit}-emb-heatmap.jpg", bbox_inches='tight')
+    plot_distance_heatmap(months, dist_stash, f"./figures/{args.subreddit}-emb-heatmap.jpg")
 
     # plot dist params
     import re
-
     df = pd.DataFrame(dist_params)
     cat_df = df[df['variable'].str.startswith("C(")].copy()
     cat_df['variable_value'] = cat_df['variable'].apply(lambda v: v.split("T.")[-1].strip("]"))

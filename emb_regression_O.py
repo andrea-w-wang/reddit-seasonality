@@ -3,26 +3,12 @@ import pickle as pk
 import numpy as np
 import pandas as pd
 import statsmodels.formula.api as smf
-from sklearn.metrics.pairwise import euclidean_distances
 from statsmodels.miscmodels.ordinal_model import OrderedModel
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from tqdm import tqdm
-
-
-def dist_for_one_sample(metadata, embeddings):
-    sample_idx = np.random.choice(len(embeddings), size=50000, replace=True)
-    sample_meta = metadata[sample_idx]
-    sample_emb = embeddings[sample_idx, :]
-    monthly_emb = pd.DataFrame(sample_emb).groupby([x['year-month'] for x in sample_meta]).mean()
-    dist = euclidean_distances(monthly_emb.values)
-    months = list(monthly_emb.index)
-    dist_df = pd.DataFrame(dist, index=months)
-    dist_df.columns = months
-    long = dist_df.unstack().reset_index()
-    long = long.sort_values(["level_0", "level_1"])
-    long = long.rename({"level_0": "month_1", "level_1": "month_2", 0: "emb"}, axis=1)
-    long['emb_rank'] = long.groupby("month_1")["emb"].rank()
-
-    return dist, months, long
+from emb_regression import dist_for_one_sample, plot_distance_heatmap
 
 
 def run_regression(long):
@@ -81,26 +67,7 @@ if __name__ == '__main__':
     pk.dump(dist_params, open(f"data/output/regression/{args.subreddit}-emb_params-O.pk", "wb"))
 
     # plot distance heatmap
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
-    fig.suptitle(f"r/{args.subreddit} Sentence Embedding")
-    mean_stash = dist_stash.mean(axis=0)
-    mean_stash[mean_stash == 0] = np.nan
-    dist = pd.DataFrame(mean_stash, index=months)
-    dist.columns = months
-    sns.heatmap(dist, cmap='PiYG', ax=axes[0])
-    axes[0].set_title(f"Euclidean distance")
-
-    from scipy.stats import rankdata
-
-    mean_rank = rankdata(dist_stash, axis=1).mean(axis=0)
-    np.fill_diagonal(mean_rank, np.nan)
-    dist = pd.DataFrame(mean_rank, index=months)
-    dist.columns = months
-    sns.heatmap(dist, cmap='PiYG', ax=axes[1])
-    axes[1].set_title(f"Rank")
-    plt.savefig(f"./figures/{args.subreddit}-emb-heatmap-O.jpg", bbox_inches='tight')
+    plot_distance_heatmap(months, dist_stash, f"./figures/{args.subreddit}-emb-heatmap-O.jpg")
 
     # plot dist params
     df = pd.DataFrame(dist_params)
