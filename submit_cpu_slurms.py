@@ -6,6 +6,8 @@ parser.add_argument("-py", "--py_func", required=True, type=str)
 parser.add_argument("-s", "--subreddits", required=True, type=str, nargs="+")
 parser.add_argument("-v", "--variable", type=str)
 args = parser.parse_args()
+variable_name = None
+variable_value = None
 if args.variable:
     variable_name = args.variable.split("=")[0]
     variable_value = args.variable.split("=")[1]
@@ -14,14 +16,25 @@ job_prefix = args.py_func.split(".")[0]
 # write sh file
 for subreddit in args.subreddits:
     with open(f"./{job_prefix}-{subreddit}.sh", "w") as f:
-        f.write(
-            f"""#!/bin/bash
-echo "Activating huggingface environment"
-source /share/apps/anaconda3/2021.05/bin/activate huggingface
-echo "Beginning script"
-cd /share/luxlab/andrea/religion-subreddits
-python3 {args.py_func} --subreddit {subreddit} --{variable_name} {variable_value}
-            """
+        if variable_value:
+            f.write(
+                f"""#!/bin/bash
+    echo "Activating huggingface environment"
+    source /share/apps/anaconda3/2021.05/bin/activate huggingface
+    echo "Beginning script"
+    cd /share/luxlab/andrea/religion-subreddits
+    python3 {args.py_func} --subreddit {subreddit}
+                """
+            )
+        else:
+            f.write(
+                f"""#!/bin/bash
+                echo "Activating huggingface environment"
+                source /share/apps/anaconda3/2021.05/bin/activate huggingface
+                echo "Beginning script"
+                cd /share/luxlab/andrea/religion-subreddits
+                python3 {args.py_func} --subreddit {subreddit} --{variable_name} {variable_value}
+                            """
         )
 
     with open(f"./{job_prefix}-{subreddit}.sub", "w") as f:
