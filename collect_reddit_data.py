@@ -1,25 +1,26 @@
 import argparse
 import json
 import time
-
+import random
 import requests
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--subreddit", required=True, type=str)
+parser.add_argument("-se", "--start-epoch", default=1538352000, type=int)
 args = parser.parse_args()
 
 print(args.subreddit)
-
+# todo: add a line to create file if file doesn't yet exist
 # Set the subreddit and time range
 subreddit = args.subreddit
-start_epoch = 1538352000  # Oct 1, 2018 at midnight UTC in Unix time
+start_epoch = args.start_epoch  # Oct 1, 2018 at midnight UTC in Unix time
 end_epoch = int(time.time())
 
 # Set the base URL for the Pushshift API
 url_template = "https://api.pushshift.io/reddit/search/comment/?subreddit={}&after={}&before={}&size=500"
 
 # Open the output file in write mode
-with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "w") as outfile:
+with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "a") as outfile:
     # Loop through each time period (500 comments at a time)
     while start_epoch < end_epoch:
         # Construct the URL for this time period
@@ -29,7 +30,7 @@ with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "w") as outfile:
         period_comments = []
 
         # Make the API request and parse the JSON response
-        time.sleep(1)
+        time.sleep(random.randint(1, 5))
         response = requests.get(url)
         data = json.loads(response.text)["data"]
 
@@ -45,7 +46,7 @@ with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "w") as outfile:
                                           start_epoch + 86400) + f"&before={last_comment_time}&size=500"
 
                 # Make the API request and parse the JSON response
-                time.sleep(1)
+                time.sleep(random.randint(1, 5))
                 response = requests.get(url)
                 data = json.loads(response.text)["data"]
 
