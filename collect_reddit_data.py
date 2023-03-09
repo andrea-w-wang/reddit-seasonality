@@ -29,6 +29,7 @@ with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "w") as outfile:
         period_comments = []
 
         # Make the API request and parse the JSON response
+        time.sleep(1)
         response = requests.get(url)
         data = json.loads(response.text)["data"]
 
@@ -44,6 +45,7 @@ with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "w") as outfile:
                                           start_epoch + 86400) + f"&before={last_comment_time}&size=500"
 
                 # Make the API request and parse the JSON response
+                time.sleep(1)
                 response = requests.get(url)
                 data = json.loads(response.text)["data"]
 
@@ -62,8 +64,6 @@ with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "w") as outfile:
         # Move the time period forward by one day
         start_epoch += 86400
 
-        # Pause the script for 1 second to avoid overloading the API
-        time.sleep(1)
 
 # Print the number of comments collected
 print(f"Collected {sum(1 for _ in open('comments.jsonl'))} comments")
