@@ -23,6 +23,7 @@ url_template = "https://api.pushshift.io/reddit/search/comment/?subreddit={}&aft
 with open(f"./data/after_2018_Oct/{subreddit}-comments.jsonl", "a") as outfile:
     # Loop through each time period (500 comments at a time)
     while start_epoch < end_epoch:
+        print(start_epoch)
         # Construct the URL for this time period
         url = url_template.format(subreddit, start_epoch, start_epoch + 86400)
 
